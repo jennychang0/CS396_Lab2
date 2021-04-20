@@ -46,23 +46,74 @@ router.route("/doctors")
     })
     .post((req, res) => {
         console.log("POST /doctors");
-        res.status(501).send();
+        console.log(req.body);
+        if (!req.body.name || !req.body.seasons){ //error not catching...idk why? am i going crazy?
+            res.status(400).send({
+                message: "name and seasons required for doctor"
+            })
+            return;
+        }
+        const newDoc = req.body;
+        Doctor.create(newDoc).save()
+            .then(doc => {
+                res.status(201).send(doc);
+            })
+            .catch(err => {
+                res.status(400).send({
+                    message: "unable to save to db"
+                })
+            })
     });
 
-
+// optional:
+router.route("/doctors/favorites")
+    .get((req, res) => {
+        console.log(`GET /doctors/favorites`);
+        res.status(501).send();
+    })
+    .post((req, res) => {
+        console.log(`POST /doctors/favorites`);
+        res.status(501).send();
+    });
     
 router.route("/doctors/:id")
     .get((req, res) => {
         console.log(`GET /doctors/${req.params.id}`);
-        res.status(501).send();
+        Doctor.findById(req.params.id)
+            .then(data => {
+                res.status(200).send(data);
+            })
+            .catch(err => {
+                res.status(404).send(err);
+            });
     })
     .patch((req, res) => {
         console.log(`PATCH /doctors/${req.params.id}`);
-        res.status(501).send();
+        Doctor.findOneAndUpdate({_id: req.params.id}, req.body, {new: true})
+            .then(data => {
+                res.status(200).send(data);
+            })
+            .catch(err =>{
+                res.status(404).send({
+                    message: "id not found"
+                });
+            })
     })
     .delete((req, res) => {
         console.log(`DELETE /doctors/${req.params.id}`);
-        res.status(501).send();
+        Doctor.findOneAndDelete({_id: req.params.id})
+        .then(data => {
+            if (data){
+                res.status(200).send(null);
+            } else {
+                res.status(404).send({
+                    message: "id not found"
+                });
+            }
+        })
+        .catch(err =>{
+            res.status(500).send(err);
+        })
     });
     
 router.route("/doctors/:id/companions")
@@ -71,15 +122,17 @@ router.route("/doctors/:id/companions")
         res.status(501).send();
     });
     
-router.route("/doctors/:id/companions/longest")
-    .get((req, res) => {
-        console.log("GET /doctors/:id/companions/longest");
-        res.status(501).send();
-    });
 
 router.route("/doctors/:id/goodparent")
     .get((req, res) => {
-        console.log("GET /doctors/:id/goodparent");
+        console.log(`GET /doctors/${req.params.id}/goodparent`);
+        res.status(501).send();
+    });
+
+// optional:
+router.route("/doctors/favorites/:doctor_id")
+    .delete((req, res) => {
+        console.log(`DELETE /doctors/favorites/${req.params.doctor_id}`);
         res.status(501).send();
     });
 
@@ -97,7 +150,23 @@ router.route("/companions")
     })
     .post((req, res) => {
         console.log("POST /companions");
-        res.status(501).send();
+        console.log(req.body);
+        if (!req.body.name || !req.body.seasons){ //AGAIN error not catching...same as POST doctor
+            res.status(400).send({
+                message: "name and seasons required for doctor"
+            })
+            return;
+        }
+        const newDoc = req.body;
+        Companion.create(newDoc).save()
+            .then(doc => {
+                res.status(201).send(doc);
+            })
+            .catch(err => {
+                res.status(400).send({
+                    message: "unable to save to db"
+                })
+            })
     });
 
 router.route("/companions/crossover")
@@ -106,18 +175,55 @@ router.route("/companions/crossover")
         res.status(501).send();
     });
 
+// optional:
+router.route("/companions/favorites")
+    .get((req, res) => {
+        console.log(`GET /companions/favorites`);
+        res.status(501).send();
+    })
+    .post((req, res) => {
+        console.log(`POST /companions/favorites`);
+        res.status(501).send();
+    })
+
 router.route("/companions/:id")
     .get((req, res) => {
         console.log(`GET /companions/${req.params.id}`);
-        res.status(501).send();
+        Companion.findById(req.params.id)
+        .then(data => {
+            res.status(200).send(data);
+        })
+        .catch(err => {
+            res.status(404).send(err);
+        });
     })
     .patch((req, res) => {
         console.log(`PATCH /companions/${req.params.id}`);
-        res.status(501).send();
+        Companion.findOneAndUpdate({_id: req.params.id}, req.body, {new: true})
+            .then(data => {
+                res.status(200).send(data);
+            })
+            .catch(err =>{
+                res.status(404).send({
+                    message: "id not found"
+                });
+            })
     })
     .delete((req, res) => {
         console.log(`DELETE /companions/${req.params.id}`);
-        res.status(501).send();
+        Companion.findOneAndDelete({_id: req.params.id})
+        .then(data => {
+            if (data){
+                res.status(200).send(null);
+            } else {
+                res.status(404).send({
+                    message: "id not found"
+                });
+            }
+        })
+        .catch(err =>{
+            res.status(500).send(err);
+        })
     });
 
 router.route("/companions/:id/doctors")
@@ -132,38 +238,10 @@ router.route("/companions/:id/friends")
         res.status(501).send();
     });
 
-//////////////////
-// EXTRA CREDIT //
-//////////////////
-router.route("/doctors/favorites")
-    .get((req, res) => {
-        console.log(`GET /doctors/favorites`);
-        res.status(501).send();
-    })
-    .post((req, res) => {
-        console.log(`POST /doctors/favorites`);
-        res.status(501).send();
-    });
-
-router.route("/doctors/favorites/:id")
+// optional:
+router.route("/companions/favorites/:companion_id")
     .delete((req, res) => {
-        console.log(`DELETE /doctors/favorites/:id`);
-        res.status(501).send();
-    });
-
-router.route("/companions/favorites")
-    .get((req, res) => {
-        console.log(`GET /companions/favorites`);
-        res.status(501).send();
-    })
-    .post((req, res) => {
-        console.log(`POST /companions/favorites`);
-        res.status(501).send();
-    })
-
-router.route("/companions/favorites/:id")
-    .delete((req, res) => {
-        console.log(`DELETE /companions/favorites/:id`);
+        console.log(`DELETE /companions/favorites/${req.params.companion_id}`);
         res.status(501).send();
     });
 
