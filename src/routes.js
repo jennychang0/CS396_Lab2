@@ -119,14 +119,58 @@ router.route("/doctors/:id")
 router.route("/doctors/:id/companions")
     .get((req, res) => {
         console.log(`GET /doctors/${req.params.id}/companions`);
-        res.status(501).send();
+        const findId = req.params["id"];
+        Doctor.findById(findId)
+            .then(artists => {
+                if (!artists){
+                    res.status(404).send("doctor not found");
+                    return;
+                }
+            })
+        
+        Companion.find( {"doctors": {$in : findId}} )  
+            .then(companions => {
+                if (companions){
+                    res.status(200).send(companions);
+                    return;
+                }
+                else{
+                    res.status(404).send("none found");
+                    return;
+                }
+            })
     });
     
 
 router.route("/doctors/:id/goodparent")
     .get((req, res) => {
         console.log(`GET /doctors/${req.params.id}/goodparent`);
-        res.status(501).send();
+        const findId = req.params["id"];
+        Doctor.findById(findId)
+            .then(artists => {
+                if (!artists){
+                    res.status(404).send("doctor not found");
+                    return;
+                }
+            })
+        
+        Companion.find( {"doctors": {$in : findId}} )  
+            .then(companions => {
+                if (companions){
+                    for (const comp of companions){
+                        if (!comp.alive){
+                            res.status(200).send(false);
+                            return;
+                        }
+                    }
+                    res.status(200).send(true);
+                    return;
+                }
+                else{
+                    res.status(404).send("none found");
+                    return;
+                }
+            })
     });
 
 // optional:
@@ -151,7 +195,7 @@ router.route("/companions")
     .post((req, res) => {
         console.log("POST /companions");
         console.log(req.body);
-        if (!req.body.name || !req.body.seasons){ //AGAIN error not catching...same as POST doctor
+        if ((!req.body.name) || (!req.body.seasons)){ //AGAIN error not catching...same as POST doctor
             res.status(400).send({
                 message: "name and seasons required for doctor"
             })
@@ -172,7 +216,22 @@ router.route("/companions")
 router.route("/companions/crossover")
     .get((req, res) => {
         console.log(`GET /companions/crossover`);
-        res.status(501).send();
+    Companion.find({})
+        .then(companions => {
+            let compList = [];
+            if (companions){
+                for (const comp of companions){
+                    if (comp.doctors.length > 1){
+                        compList.push(comp);
+                    }
+                }
+            }
+            res.status(200).send(compList);
+            return;
+        })
+        .catch(err => {
+            res.status(500).send(err);
+        });    
     });
 
 // optional:
@@ -229,13 +288,44 @@ router.route("/companions/:id")
 router.route("/companions/:id/doctors")
     .get((req, res) => {
         console.log(`GET /companions/${req.params.id}/doctors`);
-        res.status(501).send();
+        
+        Companion.findById(req.params.id)
+        .then(comp => {
+            if (comp){
+                let docList = [];
+                Doctor.find({"_id": {$in : comp.doctors}})
+                .then(doc => {
+                    res.status(200).send(doc);
+                    return;
+                })
+            }
+            else{
+                res.status(404).send("could not find this companion!");
+                return;
+            }
+        })
+        .catch(err => {
+            res.status(404).send("Error occured");
+        });
     });
 
 router.route("/companions/:id/friends")
     .get((req, res) => {
         console.log(`GET /companions/${req.params.id}/friends`);
-        res.status(501).send();
+        Companion.findById(req.params.id)
+        .then(comp => {
+            if (comp){
+                Companion.find( {"_id" : {$ne : req.params.id}, "seasons" : {$in : comp.seasons} } )
+                    .then (found_comp => {
+                        if (found_comp){
+                            res.status(200).send(found_comp);
+                        }
+                    })
+            }
+        })
+        .catch(err => {
+            res.status(404).send(err);
+        })
     });
 
 // optional:
